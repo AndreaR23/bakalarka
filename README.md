@@ -1,2 +1,3 @@
 # bakalarka
-Face detection and regocnition
+Face detection and recognition
+
