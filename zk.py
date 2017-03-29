@@ -10,25 +10,23 @@ from sklearn.cross_validation import train_test_split
 
 # NACTENI DAT
 DatasetCesta = []
-for index in os.listdir("/home/ajuska/Plocha/bakalarka/emma"):
-    DatasetCesta.append(os.path.join("/home/ajuska/Plocha/bakalarka/emma", index))
+labely = []
+for index in os.listdir("/home/ajuska/Plocha/bakalarka/true"):
+    DatasetCesta.append(os.path.join("/home/ajuska/Plocha/bakalarka/true", index))
+    labely.append(1)
+for index in os.listdir("/home/ajuska/Plocha/bakalarka/false"):
+    DatasetCesta.append(os.path.join("/home/ajuska/Plocha/bakalarka/false", index))
+    labely.append(0)
 
 data = []
-popisy = []
-
 for index in DatasetCesta:
     nacteni_obr = cv2.imread(index)
     seda = cv2.cvtColor(nacteni_obr,cv2.COLOR_BGR2GRAY)
+    seda = np.array(seda)
     data.append(seda)
-    nacteni_pop = int(os.path.split(index)[1].split(".")[0].replace("subject", " ")) - 1
-    popisy.append(nacteni_pop)
 
-popisy = np.array(popisy)
+labely = np.array(labely)
 data = np.array(data)
-# vel1 = popisy.shape
-# vel2 = data.shape
-# print(vel1)
-# print(vel2)
 
 # DETEKCE OBLICEJE
 oblicej_klas = cv2.CascadeClassifier('/home/ajuska/opencv-3.1.0/data/haarcascades/haarcascade_frontalface_default.xml')
@@ -37,49 +35,55 @@ detekce = []
 for index in data:
     body = oblicej_klas.detectMultiScale(index)
     for(x,y,w,h) in body:
-        cv2.rectangle(index,(x,y),(x+w,y+h),(255,0,0),2)
+        cv2.rectangle(index,(x,y),(x+200,y+300),(255,0,0),2)
         x,y = body [0][:2]
-        orez = index[y: y + h, x: x + w]
+        orez = index[y: y + 300, x: x + 200]
     detekce.append(orez)
-        # cv2.imshow('foto',orez)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
 
 detekce = np.array(detekce)
-# vel = detekce.shape
-# print (vel)
 
 # TRENOVACI A TESTOVACI DATABAZE
-Xtren, Xtest, Ytren, Ytest = train_test_split(detekce, popisy, train_size=0.9, random_state=5)
-Xtren = np.array(Xtren, dtype=object)
-Xtest = np.array(Xtest, dtype =object)
-Xtren = Xtren.reshape(9,1)
-Xtest = Xtest.reshape(1,1)
+Xtren, Xtest, Ytren, Ytest = train_test_split(detekce, labely, train_size=0.9, random_state=5)
+Xtren = np.array(Xtren)
+Xtest = np.array(Xtest)
+print(Xtren.shape)
+Xtren = Xtren.reshape(10,200*300)
+Xtest = Xtest.reshape(2,200*300)
+Xtren = Xtren.astype('float32')
+Xtest = Xtest.astype('float32')
 Xtren /= 255
 Xtest /= 255
 
 Ytren = np.array(Ytren)
 Ytest = np.array(Ytest)
-tridy  = 15
+tridy  = 2
 Ytren = np_utils.to_categorical(Ytren, tridy)
 Ytest = np_utils.to_categorical(Ytest, tridy)
 
 print ('Rozměry trénovací matice', Xtren.shape)
 print ('Rozmery testovací matice', Xtest.shape)
+print('Rozmery Ytren', Ytren.shape)
+print('Rozmery Ytest', Ytest.shape)
 
 # TVORBA MODELU
 model = Sequential()
-model.add(Dense(512,input_shape=(Xtren.shape[1],)))
-model.add(Activation('relu'))
+model.add(Dense(512,input_shape=(Xtren.shape[1],), init='uniform', activation='relu'))
 model.add(Dropout(0.2))
-model.add(Dense(512))
-model.add(Activation('relu'))
+model.add(Dense(512,init='uniform', activation='relu'))
 model.add(Dropout(0.2))
-model.add(Dense(tridy))
-model.add(Activation('softmax'))
+model.add(Dense(tridy, init = 'uniform', activation='softmax'))
 
 model.summary()
 
 # KOMPILACE A PRUBEH
 model.compile(loss='categorical_crossentropy', optimizer="adam", metrics=['accuracy'])
-model.fit(Xtren, Ytren, batch_size=64, nb_epoch=50, verbose=1, validation_data=(Xtest, Ytest))
+model.fit(Xtren, Ytren, batch_size=64, nb_epoch=10, verbose=1, validation_data=(Xtest, Ytest))
+
+# ODHAD
+loss, accuracy = model.evaluate(Xtest,Ytest, verbose=0)
+
+print('Loss',loss)
+print('Accurancy',accuracy)
+pred_tridy = model.predict_classes(Xtest)
+print(pred_tridy)
+
