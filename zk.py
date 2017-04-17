@@ -35,20 +35,28 @@ detekce = []
 for index in data:
     body = oblicej_klas.detectMultiScale(index)
     for(x,y,w,h) in body:
-        cv2.rectangle(index,(x,y),(x+200,y+300),(255,0,0),2)
+        cv2.rectangle(index,(x,y),(x+200,y+200),(255,0,0),2)
         x,y = body [0][:2]
-        orez = index[y: y + 300, x: x + 200]
+        orez = index[y: y + 200, x: x + 200]
+        # cv2.imshow('foto',orez)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
     detekce.append(orez)
 
 detekce = np.array(detekce)
 
 # TRENOVACI A TESTOVACI DATABAZE
-Xtren, Xtest, Ytren, Ytest = train_test_split(detekce, labely, train_size=0.9, random_state=5)
+Xtren, Xtest, Ytren, Ytest = train_test_split(detekce, labely, train_size=0.8)
+
+# cv2.imshow('foto',Xtest[1])
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
+
 Xtren = np.array(Xtren)
 Xtest = np.array(Xtest)
 print(Xtren.shape)
-Xtren = Xtren.reshape(10,200*300)
-Xtest = Xtest.reshape(2,200*300)
+Xtren = Xtren.reshape(14,200*200)
+Xtest = Xtest.reshape(4,200*200)
 Xtren = Xtren.astype('float32')
 Xtest = Xtest.astype('float32')
 Xtren /= 255
