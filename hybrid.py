@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import os
 from matplotlib import pyplot
-from knihovna import zm_vel
+from knihovna import zm_vel, loading
 from keras.models import Sequential
 from keras.utils import np_utils
 from sklearn.cross_validation import train_test_split
@@ -38,6 +38,10 @@ l_sablony = np.array(l_sablony)
 sablonaL_vysl = []
 for sablonaL in l_sablony:
     sablonaL_vysl.append(cv2.Canny(sablonaL, 10, 80))
+
+data1 = []
+data1 = loading("/home/ajuska/Plocha/bakalarka/radek3",sablonaL_vysl, 1)
+print(data1.shape)
 
 oblicej_klas = cv2.CascadeClassifier('/home/ajuska/opencv-3.1.0/data/haarcascades/haarcascade_frontalface_default.xml')
 
