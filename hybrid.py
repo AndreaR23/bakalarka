@@ -4,11 +4,9 @@ import os
 from matplotlib import pyplot
 from knihovna import zm_vel
 from keras.models import Sequential
-from keras.layers import Activation, Dense, Dropout
 from keras.utils import np_utils
 from sklearn.cross_validation import train_test_split
-
-from keras.layers.core import Dense, Dropout, Activation, Flatten
+from keras.layers.core import Dense, Dropout, Flatten
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 
 # from picamera import PiCamera
@@ -61,6 +59,7 @@ data1 = np.array(data1)
 detekce = []
 for index in data1:
     body = oblicej_klas.detectMultiScale(index)
+    maximum = []
     for(x,y,w,h) in body:
         cv2.rectangle(index,(x,y),(x+300,y+400),(255,0,0),2)
         x,y = body [0][:2]
@@ -84,11 +83,13 @@ for index in data1:
             velS = velikost[1]
             korelace = cv2.matchTemplate(hrany, sablona, cv2.TM_CCORR_NORMED)
             min, max, min_poz, max_poz = cv2.minMaxLoc(korelace)
-            #print("r",max)
+            maximum.append(max)
 
-            if max >= 0.43:
-               detekce.append(orez)
-               label.append(1)
+        shoda = np.amax(maximum)
+        if shoda >= 0.4:
+           print (shoda)
+           detekce.append(orez)
+           label.append(1)
 
 Cesta2 = []
 for index in os.listdir("/home/ajuska/Plocha/bakalarka/pavel"):
@@ -104,6 +105,7 @@ for index in Cesta2:
 data2 = np.array(data2)
 for index in data2:
     body = oblicej_klas.detectMultiScale(index)
+    maximum = []
     for(x,y,w,h) in body:
         cv2.rectangle(index,(x,y),(x+300,y+400),(255,0,0),2)
         x,y = body [0][:2]
@@ -127,11 +129,13 @@ for index in data2:
             velS = velikost[1]
             korelace = cv2.matchTemplate(hrany, sablona, cv2.TM_CCORR_NORMED)
             min, max, min_poz, max_poz = cv2.minMaxLoc(korelace)
-            #print("f",max)
+            maximum.append(max)
 
-            if max >= 0.405:
-               detekce.append(orez)
-               label.append(0)
+        shoda = np.amax(maximum)
+        if shoda >= 0.4:
+           print (shoda)
+           detekce.append(orez)
+           label.append(0)
 
 detekce = np.array(detekce)
 #print(detekce)
@@ -142,8 +146,8 @@ print(label)
 
 # TRENOVACI A TESTOVACI DATABAZE
 Xtren, Xtest, Ytren, Ytest = train_test_split(detekce, label, train_size=0.8)
-
 print(Xtest.shape)
+
 for i in range (0, len(Xtest)):
     cv2.imshow('image', Xtest[i])
     cv2.waitKey(2000)
@@ -165,8 +169,8 @@ tridy  = 2
 Ytren = np_utils.to_categorical(Ytren, tridy)
 Ytest = np_utils.to_categorical(Ytest, tridy)
 
-print ('Rozměry trénovací matice', Xtren.shape)
-print ('Rozmery testovací matice', Xtest.shape)
+print ('Rozmery trenovaci matice', Xtren.shape)
+print ('Rozmery testovaci matice', Xtest.shape)
 print('Rozmery Ytren', Ytren.shape)
 print('Rozmery Ytest', Ytest.shape)
 
@@ -193,10 +197,13 @@ model.fit(Xtren, Ytren, batch_size=64, nb_epoch=50, verbose=1, validation_data=(
 # ODHAD
 loss, accuracy = model.evaluate(Xtest,Ytest, verbose=0)
 
+model.save('/home/ajuska/Plocha/bakalarka/model.h5')
+
 print('Loss',loss)
 print('Accurancy',accuracy)
 pred_tridy = model.predict_classes(Xtest)
 print(pred_tridy)
+
 
 
 
