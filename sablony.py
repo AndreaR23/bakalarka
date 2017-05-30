@@ -1,83 +1,74 @@
 import numpy as np
 import cv2
 from matplotlib import pyplot 
-from picamera import PiCamera
-from time import sleep
-from knihovna import zm_vel
+from library import change_size
 
-kamera = PiCamera()
-kamera.resolution=(640,480)
-kamera.start_preview()
-sleep(10)
-kamera.capture('/home/pi/Desktop/foto.jpg')
-sleep(2)
-kamera.stop_preview()
-
-fotka = cv2.imread('/home/pi/Desktop/foto.jpg')
-sedoton = cv2.cvtColor(fotka,cv2.COLOR_BGR2GRAY)
-sedoton2 = cv2.GaussianBlur(sedoton,(5,5),0)
-pyplot.hist(sedoton2.ravel(),256,[0,256])
-hrany = cv2.Canny(sedoton2,50,150)
-
-# sablony
-l_sablony = []
-l_sablony = zm_vel('/home/pi/Desktop/oko1.jpg', 5, 12, 1, l_sablony)
-l_sablony = zm_vel('/home/pi/Desktop/oko2.jpg', 5, 12, 1, l_sablony)
-l_sablony = zm_vel('/home/pi/Desktop/oko3.jpg', 5, 12, 1, l_sablony)
-l_sablony = zm_vel('/home/pi/Desktop/oko4.jpg', 5, 12, 1, l_sablony)
-l_sablony = zm_vel('/home/pi/Desktop/oko5.jpg', 5, 12, 1, l_sablony)
-l_sablony = zm_vel('/home/pi/Desktop/oko6.jpg', 5, 12, 1, l_sablony)
-l_sablony = zm_vel('/home/pi/Desktop/oko7.jpg', 5, 12, 1, l_sablony)
-l_sablony = zm_vel('/home/pi/Desktop/oko8.jpg', 5, 12, 1, l_sablony)
-l_sablony = zm_vel('/home/pi/Desktop/oko9.jpg', 5, 12, 1, l_sablony)
-l_sablony = zm_vel('/home/pi/Desktop/oko10.jpg', 5, 12, 1, l_sablony)
-
-l_sablony = np.array(l_sablony)
-
-sablonaL_vysl = []
-for sablonaL in l_sablony:
-    sablonaL_vysl.append(cv2.Canny(sablonaL, 10, 80))
-
-velikost = hrany.shape
-sirka = velikost[1]
-vyska = velikost[0]
-print(velikost)
-
-for s in range(1,sirka):
-    for r in range (0,vyska):
-        if hrany[r, s] == 0:
-           hrany[r, s] = 5
-
-# Vyber sablony
-max = 0
-souradnice = []
-poz_sablona = []
-PROCENTA = 0.15
-KROK = 4
-
-for sloupec in range (0, sirka - 120, KROK): #Prochazeni sloupcu a radku v puvodnim obraze, bez okrajovych pixelu
-    for radek in range (0, vyska - 100, KROK):
-        for ind_sablona in range(0, len(sablonaL_vysl)):
-            sablona = sablonaL_vysl[ind_sablona]
-            velikost = sablona.shape
-            velR = velikost[0]
-            velS = velikost[1]
-            oblast = hrany[radek:velR+radek, sloupec:velS+sloupec]
-            if ((np.sum(oblast)*100))/255 / (velR*velS) > 8:
-                porovnani = np.isclose(oblast, sablona)
-                porovnani = (np.sum(porovnani) * 100) / (np.sum(sablona) / 255)
-                if max < porovnani:
-                   max = porovnani
-                   souradnice = [sloupec, radek]
-                   poz_sablona = ind_sablona
-
-x = souradnice[0] 
-y = souradnice[1] 
-y2 = souradnice[1] + 50
-x2 = souradnice[0] + 50
-cv2.rectangle(fotka,(x,y),(x2,y2),(255,0,0),2)
-cv2.imshow('foto',fotka)
+image = cv2.imread('/home/ajuska/Plocha/bakalarka/aja/aja0009.jpg')
+grey_colors = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+grey_colors2 = cv2.GaussianBlur(grey_colors, (5, 5), 0)
+pyplot.hist(grey_colors2.ravel(), 256, [0, 256])
+edges = cv2.Canny(grey_colors2, 30, 60)
+cv2.imshow('foto', edges)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
+# sablony
+eye_template = []
+eye_template = change_size('/home/ajuska/Plocha/bakalarka/oci/oko1.jpg', 3, 15, 1, eye_template)
+eye_template = change_size('/home/ajuska/Plocha/bakalarka/oci/oko2.jpg', 3, 15, 1, eye_template)
+eye_template = change_size('/home/ajuska/Plocha/bakalarka/oci/oko3.jpg', 3, 15, 1, eye_template)
+eye_template = change_size('/home/ajuska/Plocha/bakalarka/oci/oko4.jpg', 3, 15, 1, eye_template)
+eye_template = change_size('/home/ajuska/Plocha/bakalarka/oci/oko5.jpg', 3, 15, 1, eye_template)
+eye_template = change_size('/home/ajuska/Plocha/bakalarka/oci/oko6.jpg', 3, 15, 1, eye_template)
+eye_template = change_size('/home/ajuska/Plocha/bakalarka/oci/oko7.jpg', 3, 15, 1, eye_template)
+eye_template = change_size('/home/ajuska/Plocha/bakalarka/oci/oko8.jpg', 3, 15, 1, eye_template)
+eye_template = change_size('/home/ajuska/Plocha/bakalarka/oci/oko9.jpg', 3, 15, 1, eye_template)
+eye_template = change_size('/home/ajuska/Plocha/bakalarka/oci/oko10.jpg', 3, 15, 1, eye_template)
 
+eye_template = np.array(eye_template)
+
+template_fin = []
+for templ in eye_template:
+    template_fin.append(cv2.Canny(templ, 10, 80))
+
+dimensions = edges.shape
+width = dimensions[1]
+high = dimensions[0]
+print(dimensions)
+
+for s in range(1, width):
+    for r in range (0, high):
+        if edges[r, s] == 0:
+           edges[r, s] = 5
+
+# Vyber sablony
+max = 0
+coordinates = []
+loc_temp = []
+PERCENT = 0.15
+STEP = 4
+
+for column in range (0, width - 120, STEP): #Prochazeni sloupcu a radku v puvodnim obraze, bez okrajovych pixelu
+    for row in range (0, high - 100, STEP):
+        for ind_templ in range(0, len(template_fin)):
+            template = template_fin[ind_templ]
+            dimensions = template.shape
+            dimR = dimensions[0]
+            dimC = dimensions[1]
+            area = edges[row:dimR + row, column:dimC + column]
+            if ((np.sum(area)*100))/255 / (dimR*dimC) > 8:
+                compare = np.isclose(area, template)
+                compare = (np.sum(compare) * 100) / (np.sum(template) / 255)
+                if max < compare:
+                   max = compare
+                   coordinates = [column, row]
+                   loc_temp = ind_templ
+
+x = coordinates[0]
+y = coordinates[1]
+y2 = coordinates[1] + 50
+x2 = coordinates[0] + 50
+cv2.rectangle(image, (x, y), (x2, y2), (255, 0, 0), 2)
+cv2.imshow('foto', image)
+cv2.waitKey(0)
+cv2.destroyAllWindows()

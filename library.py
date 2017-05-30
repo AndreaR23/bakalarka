@@ -6,6 +6,7 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Flatten
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 
+# FUNCTION FOR EYE-TEMPLATES PREPROCESSING
 def change_size (temp, smallest, biggest, step, array):
     woman = cv2.imread(temp)
     temp_woman = cv2.cvtColor(woman, cv2.COLOR_BGR2GRAY)
@@ -15,6 +16,7 @@ def change_size (temp, smallest, biggest, step, array):
         array.append(cv2.resize(temp_edges, None, fx=j, fy=j, interpolation = cv2.INTER_CUBIC))
     return array
 
+# FUNCTION FOR FACES DETECTION IN IMAGES FROM LOADING FILES
 def loading (path, template, label, path_xml, crop, classes):
 
     Path1 = []
@@ -35,13 +37,13 @@ def loading (path, template, label, path_xml, crop, classes):
         points = face_class.detectMultiScale(index)
         maximum = []
         for(x,y,w,h) in points:
-            cv2.rectangle(index,(x,y),(x+300,y+400),(255,0,0),2)
+            cv2.rectangle(index,(x,y),(x+400,y+400),(255,0,0),2)
             x,y = points [0][:2]
-            detection = index[y: y + 400, x: x + 300]
+            detection = index[y: y + 400, x: x + 400]
             detection = np.array(detection)
             # print(detection.shape[0])
 
-            if (detection.shape[0] ==400) & (detection.shape[1] ==300):
+            if (detection.shape[0] ==400) & (detection.shape[1] ==400):
                detection = cv2.GaussianBlur(detection,(5,5),0)
                pyplot.hist(detection.ravel(),256,[0,256])
                edges = cv2.Canny(detection,50,150)
@@ -54,11 +56,32 @@ def loading (path, template, label, path_xml, crop, classes):
                    #print(maximum)
 
                same = np.amax(maximum)
-               if same >= 0.39:
+               if same >= 0.05:
                   crop.append(detection)
                   classes.append(label)
                break
 
+# FUNCTION FOR LOADING PRE-PREPARED CROPS OF DETECTED FACES FROM ANOTHER FILE
+def loading2 (path, label, crop, classes):
+
+    Path1 = []
+
+    for index in os.listdir(path):
+        Path1.append(os.path.join(path, index))
+
+    for index in Path1:
+        load_img = cv2.imread(index)
+        r = 400 / load_img.shape[1]
+        dim = (400, int(load_img.shape[0] * r))
+        resized = cv2.resize(load_img, dim, interpolation = cv2.INTER_AREA)
+        grey = cv2.cvtColor(resized,cv2.COLOR_BGR2GRAY)
+        grey = np.array(grey)
+
+        if (grey.shape[0] ==400) & (grey.shape[1] ==400):
+            crop.append(grey)
+            classes.append(label)
+
+# FUNCTION FOR DEFINED CONVOLUTIONAL NEURAL NETWORK
 def network (dimensions, Xtrain, Ytrain, Xtest, Ytest, classes_num):
     model = Sequential()
 
@@ -81,7 +104,6 @@ def network (dimensions, Xtrain, Ytrain, Xtest, Ytest, classes_num):
     loss, accuracy = model.evaluate(Xtest, Ytest, verbose=0)
     pred_classes = model.predict_classes(Xtest)
 
-    # model.save('/home/ajuska/Plocha/bakalarka/model.h5')
     model_json = model.to_json()
     with open("model.json", "w") as json_file:
         json_file.write(model_json)
